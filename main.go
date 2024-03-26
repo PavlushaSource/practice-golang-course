@@ -3,52 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kljensen/snowball"
-	"io"
+	"github.com/PavlushaSource/yadro-practice-course/spellcheck"
 	"os"
-	"slices"
-	"strings"
 )
 
-func deleteStopWords(currentString string) []string {
-	f, err := os.Open("stopwords_en.txt")
+//type langDetector struct {
+//	langDetector *lingua.LanguageDetector
+//}
+
+func check(err error) {
 	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return nil
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			fmt.Println("Error closing file:", err)
-		}
-	}(f)
-
-	stopWords, err := io.ReadAll(f)
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-		return nil
-	}
-	stopWordString := strings.Split(string(stopWords), "\n")
-	res := make([]string, 0, len(stopWordString))
-
-	for _, word := range strings.Split(currentString, " ") {
-		word = strings.ToLower(word)
-		if !slices.Contains(stopWordString, word) {
-			res = append(res, word)
-		}
-	}
-	return res
-}
-
-func stemmingWords(currentString []string) []string {
-	res := make([]string, 0, len(currentString))
-	for i := range currentString {
-		stemWord, err := snowball.Stem(currentString[i], "english", true)
-		if err == nil {
-			res = append(res, stemWord)
-		}
-	}
-	return res
 }
 
 func main() {
@@ -60,6 +27,21 @@ func main() {
 	flag.Parse()
 
 	if stemmerFlag {
-		fmt.Println(stemmingWords(deleteStopWords(flag.Args()[0])))
+		args := flag.Args()
+		if len(args) != 1 {
+			fmt.Println("Stemmer work with one argument - string.\nExample: ./myApp -s \"current string\"")
+			return
+		}
+		st, err := NewSnowballStemmer("stopwords-iso.json", []ISOCode639_1{"en"})
+		check(err)
+		checker := spellcheck.NewFuzzyChecker(1, 2)
+		err = checker.LoadDataset("spellcheck/all-words.txt")
+		check(err)
+		resS, err := st.NormalizeStringWithSpellcheck(args[0], checker)
+		check(err)
+		res, err := st.NormalizeString(args[0])
+		check(err)
+		fmt.Printf("result with spellcheck - %s\n", resS)
+		fmt.Printf("result without spellcheck - %s\n", res)
 	}
 }
