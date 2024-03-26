@@ -7,10 +7,6 @@ import (
 	"os"
 )
 
-//type langDetector struct {
-//	langDetector *lingua.LanguageDetector
-//}
-
 func check(err error) {
 	if err != nil {
 		fmt.Println(err)
@@ -19,10 +15,9 @@ func check(err error) {
 }
 
 func main() {
-
 	var stemmerFlag bool
 	flag.BoolVar(&stemmerFlag, "s", false,
-		"A flag for normalizing the sentence that will be passed to the input program. Enter what needs to be normalized after the flag to work correctly.")
+		"A flag for normalizing the sentence that will be passed to the input program. Enter string after the flag to work correctly.")
 
 	flag.Parse()
 
@@ -32,16 +27,19 @@ func main() {
 			fmt.Println("Stemmer work with one argument - string.\nExample: ./myApp -s \"current string\"")
 			return
 		}
-		st, err := NewSnowballStemmer("stopwords-iso.json", []ISOCode639_1{"en"})
+		langStopWords := []ISOCode639_1{"en", "ru"}
+		stopWordsDatapath := "stopwords-iso.json"
+		st, err := NewSnowballStemmer(stopWordsDatapath, langStopWords)
 		check(err)
 		checker := spellcheck.NewFuzzyChecker(1, 2)
 		err = checker.LoadDataset("spellcheck/all-words.txt")
 		check(err)
-		resS, err := st.NormalizeStringWithSpellcheck(args[0], checker)
+		normalizedWithSpellchecker, err := st.NormalizeStringWithSpellcheck(args[0], checker)
 		check(err)
-		res, err := st.NormalizeString(args[0])
+		normalized, err := st.NormalizeString(args[0])
 		check(err)
-		fmt.Printf("result with spellcheck - %s\n", resS)
-		fmt.Printf("result without spellcheck - %s\n", res)
+
+		fmt.Printf("result with spellcheck - %s\n", normalizedWithSpellchecker)
+		fmt.Printf("result without spellcheck - %s\n", normalized)
 	}
 }

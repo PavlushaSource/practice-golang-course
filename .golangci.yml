@@ -1,0 +1,21 @@
+run:
+  concurrency: 8
+
+linters:
+  enable:
+    - govet
+    - predeclared
+    - stylecheck
+    - errcheck
+    - gofmt
+    - gosimple
+    - staticcheck
+    - typecheck
+    - unconvert
+    - ineffassign
+
+linters-settings:
+  govet:
+    check-shadowing: true
+  golint:
+    simplify: true

@@ -16,6 +16,7 @@ type fuzzyChecker struct {
 	checker *fuzzy.Model
 }
 
+// LoadDataset load dataset from file and save in your spell checker
 func (checker *fuzzyChecker) LoadDataset(dataPath string) error {
 	data, err := os.ReadFile(dataPath)
 	if err != nil {
@@ -44,6 +45,5 @@ func NewFuzzyChecker(threshold, depth int) SpellChecker {
 	model := fuzzy.NewModel()
 	model.SetDepth(depth)
 	model.SetThreshold(threshold)
-
 	return &fuzzyChecker{checker: model}
 }
