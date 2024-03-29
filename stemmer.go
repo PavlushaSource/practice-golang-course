@@ -15,8 +15,7 @@ import (
 type ISOCode639_1 string
 
 type Stemmer interface {
-	NormalizeString(input string) (string, error)
-	NormalizeStringWithSpellcheck(input string, spellchecker spellcheck.SpellChecker) (string, error)
+	NormalizeString(input string, spellcheck ...spellcheck.SpellChecker) (string, error)
 }
 
 type snowballStemmer struct {
@@ -79,41 +78,42 @@ func (stemmer *snowballStemmer) normalizeWords(words []string) ([]string, error)
 	return slices.Clip(res), nil
 }
 
-func (stemmer *snowballStemmer) NormalizeString(input string) (string, error) {
-	wordsWithoutStopWords := stemmer.deleteStopWords(deleteAllPunctuation(input))
-	resString, err := stemmer.normalizeWords(wordsWithoutStopWords)
-	if err != nil {
-		return "", fmt.Errorf("error normalize string: %w", err)
-	}
-	return strings.Join(resString, " "), nil
-}
-
-func (stemmer *snowballStemmer) NormalizeStringWithSpellcheck(input string, spellchecker spellcheck.SpellChecker) (string, error) {
-	wordsSpellChecked := spellchecker.SpellCheckString(deleteAllPunctuation(input))
-	wordsWithoutStopWords := stemmer.deleteStopWords(wordsSpellChecked)
-	resString, err := stemmer.normalizeWords(wordsWithoutStopWords)
-	if err != nil {
-		return "", fmt.Errorf("error normalize string: %w", err)
-	}
-	return strings.Join(resString, " "), nil
-}
-
-func NewSnowballStemmer(stopWordsPath string, langForStopWords []ISOCode639_1) (Stemmer, error) {
-	availableLanguages := []ISOCode639_1{"en", "ru"} // not need more for now
-
-	err := func() error {
-		for _, l := range langForStopWords {
-			if !slices.Contains(availableLanguages, l) {
-				return fmt.Errorf("not found necessary stopwords for language %v", l)
-			}
+func removeDuplicateStrings(s []string) []string {
+	stringWithoutDuplicate := make([]string, 0)
+	exist := make(map[string]struct{})
+	for _, currS := range s {
+		if _, ok := exist[currS]; !ok {
+			stringWithoutDuplicate = append(stringWithoutDuplicate, currS)
+			exist[currS] = struct{}{}
 		}
-		return nil
-	}()
+	}
+	return stringWithoutDuplicate
+}
+
+func (stemmer *snowballStemmer) NormalizeString(input string, spellchecker ...spellcheck.SpellChecker) (string, error) {
+	if len(spellchecker) > 0 {
+		input = spellchecker[0].SpellCheckString(input)
+	}
+	wordsWithoutStopWords := stemmer.deleteStopWords(deleteAllPunctuationWithBuilder(input))
+	resString, err := stemmer.normalizeWords(wordsWithoutStopWords)
 	if err != nil {
-		return nil, fmt.Errorf("error find stopwords data: %w", err)
+		return "", fmt.Errorf("error normalize string: %w", err)
+	}
+	resString = removeDuplicateStrings(resString)
+	return strings.Join(resString, " "), nil
+}
+
+func NewSnowballStemmer(stopWordsPath ...string) (Stemmer, error) {
+	availableLanguages := []ISOCode639_1{"en", "ru"} // not need more for now
+	var currentStopWordsPath string
+
+	if len(stopWordsPath) > 0 {
+		currentStopWordsPath = stopWordsPath[0]
+	} else {
+		currentStopWordsPath = "stopwords-iso.json"
 	}
 
-	jsonFile, err := os.Open(stopWordsPath)
+	jsonFile, err := os.Open(currentStopWordsPath)
 
 	if err != nil {
 		return nil, fmt.Errorf("stopwords file not found: %w", err)
@@ -126,33 +126,15 @@ func NewSnowballStemmer(stopWordsPath string, langForStopWords []ISOCode639_1) (
 	}
 
 	stopWordMapping := make(map[ISOCode639_1][]string)
-
 	err = json.Unmarshal(jsonData, &stopWordMapping)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling stopwords: %w", err)
 	}
 
-	necessaryStopWords := make(map[ISOCode639_1][]string, len(langForStopWords))
-	for _, langISO639 := range langForStopWords {
+	necessaryStopWords := make(map[ISOCode639_1][]string, len(availableLanguages))
+	for _, langISO639 := range availableLanguages {
 		necessaryStopWords[langISO639] = stopWordMapping[langISO639]
 	}
 
 	return &snowballStemmer{stopWords: necessaryStopWords, availableLanguages: availableLanguages}, nil
-}
-
-func deleteAllPunctuation(input string) string {
-
-	// punctuations without \' and -
-	punctuations := []rune{'!', '?', '.', ',', ';', ':', '\'', '"', '@', '&', '#', '$', '%', '^', '*', '(', ')', '[', ']',
-		'{', '}', '<', '>', '/', '|', '\\', '`', '~', '='}
-
-	b := strings.Builder{}
-	for _, r := range input {
-		if !slices.Contains(punctuations, r) {
-			b.WriteRune(r)
-		} else {
-			b.WriteRune(' ')
-		}
-	}
-	return b.String()
 }
