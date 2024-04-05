@@ -7,9 +7,10 @@ import (
 )
 
 type Config struct {
-	Env       string `yaml:"env" envDefault:"local"`
-	DbFile    string `yaml:"db_file" env-required:"true"`
-	SourceUrl string `yaml:"source_url" envDefault:"https://xkcd.com"`
+	Env             string `yaml:"env" envDefault:"local"`
+	DbFile          string `yaml:"db_file" env-required:"true"`
+	SourceUrl       string `yaml:"source_url" envDefault:"https://xkcd.com"`
+	SpellcheckModel string `yaml:"spellcheck_model" env:"SPELLCHECK_PATH" env-required:"true"`
 }
 
 func LoadConfig() (*Config, error) {
