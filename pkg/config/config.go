@@ -13,6 +13,8 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
+
+	// config path from env or default
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		configPath = "config.yaml"
