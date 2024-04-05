@@ -79,7 +79,7 @@ func loadAllWords(path string) map[string]struct{} {
 }
 
 func NewFuzzyChecker(args ...int) SpellChecker {
-	loadedModel, errLoad := fuzzy.Load("spellcheck/savedModel")
+	loadedModel, errLoad := fuzzy.Load("internal/resources/spellchecker/savedModel")
 
 	if errLoad != nil {
 		model := fuzzy.NewModel()
@@ -93,13 +93,13 @@ func NewFuzzyChecker(args ...int) SpellChecker {
 		if len(args) >= 2 {
 			model.SetThreshold(args[1])
 		}
-		fzCheck := fuzzyChecker{checker: model, allWords: loadAllWords("spellcheck/all-words.txt")}
-		_ = fzCheck.LoadDataset("spellcheck/10000-english.txt")
-		_ = fzCheck.LoadDataset("spellcheck/10000-russian.txt")
+		fzCheck := fuzzyChecker{checker: model, allWords: loadAllWords("internal/resources/words/dictionaries/all-words.txt")}
+		_ = fzCheck.LoadDataset("internal/resources/words/dictionaries/10000-english.txt")
+		_ = fzCheck.LoadDataset("internal/resources/words/dictionaries/10000-russian.txt")
 
 		return &fzCheck
 	}
 
-	fzChecker := fuzzyChecker{checker: loadedModel, allWords: loadAllWords("spellcheck/all-words.txt")}
+	fzChecker := fuzzyChecker{checker: loadedModel, allWords: loadAllWords("internal/resources/words/dictionaries/all-words.txt")}
 	return &fzChecker
 }

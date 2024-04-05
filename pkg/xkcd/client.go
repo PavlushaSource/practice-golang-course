@@ -13,7 +13,7 @@ const (
 	xkcd = "https://xkcd.com"
 )
 
-type comicInfo struct {
+type ComicInfo struct {
 	Num        int    `json:"num"`
 	Transcript string `json:"transcript"`
 	Img        string `json:"img"`
@@ -29,11 +29,11 @@ func NewClient() *http.Client {
 func findNumberComics(client http.Client, urlName string) (int, error) {
 	switch urlName {
 	case xkcd:
-		_, err := getComicFromURL(&client, fmt.Sprintf("%s/info.0.json", urlName))
+		comic, err := getComicFromURL(&client, fmt.Sprintf("%s/info.0.json", urlName))
 		if err != nil {
 			return 0, fmt.Errorf("cannot find number of comics: %w", err)
 		}
-		return 15, nil
+		return comic.Num, nil
 	default:
 		return 0, fmt.Errorf("cannot find number of comics from url: %s", urlName)
 	}
@@ -48,7 +48,7 @@ func generateComicUrl(id int, siteUrl string) string {
 	}
 }
 
-func GetComics(client *http.Client, urlName string, log *slog.Logger) map[int]comicInfo {
+func GetComics(client *http.Client, urlName string, log *slog.Logger) map[int]ComicInfo {
 	log = log.With("GetComicsFromSite", urlName)
 	lastNumberComic, err := findNumberComics(*client, urlName)
 	if err != nil {
@@ -56,7 +56,7 @@ func GetComics(client *http.Client, urlName string, log *slog.Logger) map[int]co
 		return nil
 	}
 
-	readComics := make(map[int]comicInfo)
+	readComics := make(map[int]ComicInfo)
 	mapMutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	for i := 1; i <= lastNumberComic; i++ {
@@ -67,6 +67,7 @@ func GetComics(client *http.Client, urlName string, log *slog.Logger) map[int]co
 			comic, err := getComicFromURL(client, comicUrl)
 			if err != nil {
 				log.Error(err.Error(), "comicID", i)
+				return
 			}
 			mapMutex.Lock()
 			readComics[i] = *comic
@@ -77,7 +78,7 @@ func GetComics(client *http.Client, urlName string, log *slog.Logger) map[int]co
 	return readComics
 }
 
-func getComicFromURL(client *http.Client, urlName string) (*comicInfo, error) {
+func getComicFromURL(client *http.Client, urlName string) (*ComicInfo, error) {
 	resp, err := client.Get(urlName)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get comic from url %s: %w", urlName, err)
@@ -89,7 +90,7 @@ func getComicFromURL(client *http.Client, urlName string) (*comicInfo, error) {
 		return nil, fmt.Errorf("cannot read comic from url %s: %w", urlName, err)
 	}
 
-	var comic comicInfo
+	var comic ComicInfo
 	err = json.Unmarshal(body, &comic)
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal comic from url %s: %w", urlName, err)

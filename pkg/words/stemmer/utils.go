@@ -26,17 +26,6 @@ func Check(err error) {
 	}
 }
 
-func deleteAllPunctuationWithField(input string) string {
-	punctuations := []rune{'!', '?', '.', ',', ';', ':', '\'', '"', '@', '&', '#', '$', '%', '^', '*', '(', ')', '[', ']',
-		'{', '}', '<', '>', '/', '|', '\\', '`', '~', '='}
-
-	f := func(c rune) bool {
-		return !slices.Contains(punctuations, c)
-	}
-	words := strings.FieldsFunc(input, f)
-	return strings.Join(words, " ")
-}
-
 func deleteAllPunctuationWithBuilder(input string) string {
 	// punctuations without \' and -
 	punctuations := []rune{'!', '?', '.', ',', ';', ':', '\'', '"', '@', '&', '#', '$', '%', '^', '*', '(', ')', '[', ']',

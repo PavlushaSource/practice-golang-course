@@ -3,20 +3,20 @@ package stemmer
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/PavlushaSource/yadro-practice-course"
 	"github.com/PavlushaSource/yadro-practice-course/pkg/words/spellcheck"
 	"github.com/kljensen/snowball"
 	"github.com/pemistahl/lingua-go"
 	"io"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 )
 
 type ISOCode639_1 string
 
 type Stemmer interface {
-	NormalizeString(input string, spellcheck ...spellcheck.SpellChecker) (string, error)
+	NormalizeString(input string, spellcheck ...spellcheck.SpellChecker) ([]string, error)
 }
 
 type snowballStemmer struct {
@@ -66,6 +66,13 @@ func (stemmer *snowballStemmer) normalizeWords(words []string) ([]string, error)
 	detector := lingua.NewLanguageDetectorBuilder().FromLanguages(defineLanguages...).Build()
 	res := make([]string, 0, len(words))
 	for _, word := range words {
+		// try convert to number
+		_, err := strconv.Atoi(word)
+		if err == nil {
+			res = append(res, word)
+			continue
+		}
+
 		if usedLanguage, exist := detector.DetectLanguageOf(word); exist {
 			stemWord, err := snowball.Stem(word, strings.ToLower(usedLanguage.String()), true)
 			if err != nil {
@@ -91,17 +98,17 @@ func removeDuplicateStrings(s []string) []string {
 	return stringWithoutDuplicate
 }
 
-func (stemmer *snowballStemmer) NormalizeString(input string, spellchecker ...spellcheck.SpellChecker) (string, error) {
+func (stemmer *snowballStemmer) NormalizeString(input string, spellchecker ...spellcheck.SpellChecker) ([]string, error) {
 	if len(spellchecker) > 0 {
 		input = spellchecker[0].SpellCheckString(input)
 	}
-	wordsWithoutStopWords := stemmer.deleteStopWords(main.deleteAllPunctuationWithBuilder(input))
+	wordsWithoutStopWords := stemmer.deleteStopWords(deleteAllPunctuationWithBuilder(input))
 	resString, err := stemmer.normalizeWords(wordsWithoutStopWords)
 	if err != nil {
-		return "", fmt.Errorf("error normalize string: %w", err)
+		return nil, fmt.Errorf("error normalize string: %w", err)
 	}
 	resString = removeDuplicateStrings(resString)
-	return strings.Join(resString, " "), nil
+	return resString, nil
 }
 
 func NewSnowballStemmer(stopWordsPath ...string) (Stemmer, error) {
@@ -111,7 +118,7 @@ func NewSnowballStemmer(stopWordsPath ...string) (Stemmer, error) {
 	if len(stopWordsPath) > 0 {
 		currentStopWordsPath = stopWordsPath[0]
 	} else {
-		currentStopWordsPath = "stopwords-iso.json"
+		currentStopWordsPath = "internal/resources/words/stopwords/stopwords-iso.json"
 	}
 
 	jsonFile, err := os.Open(currentStopWordsPath)
