@@ -1,4 +1,4 @@
-package xkcd
+package cmd
 
 import (
 	"fmt"
