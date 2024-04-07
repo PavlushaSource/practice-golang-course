@@ -8,13 +8,13 @@ lint: fmt
 	@golangci-lint run ./...
 
 build: lint
-	@go build ./ -o xkcd -race
+	@go build -race -o xkcd ./cmd/xkcd/
 
 run: lint
-	@go run ./
+	@go run -race ./cmd/xkcd/
 
 clear:
-	@go clean
+	@rm ./xkcd
 	@rm ./database.json
 
 clearModel:

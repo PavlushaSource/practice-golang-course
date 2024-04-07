@@ -85,10 +85,12 @@ func (stemmer *snowballStemmer) normalizeWords(words []string) ([]string, error)
 				specialWord = deleteAllPunctuationWithBuilder(specialWord)
 				if _, err := strconv.Atoi(specialWord); err == nil {
 					res = append(res, specialWord)
-				} else if specialWord != "" {
-					// uncomment if you want to see the words that stemmer skips
-					//fmt.Println("language for word: ", word, "is not detected. Skip this word.")
+					continue
 				}
+				// uncomment if you want to see the words that stemmer skips
+				//if specialWord != "" {
+				//	fmt.Println("language for word: ", word, "is not detected. Skip this word.")
+				//}
 			}
 		}
 	}

@@ -41,10 +41,17 @@ func main() {
 	}
 
 	// init storage
-	log.Debug("Init database", "db_file", cfg.DbFile)
+	log.Debug("Init database", "db_file", cfg.DBFile)
 
-	storage, cancel, err := database.NewJsonStorage(cfg.DbFile)
-	defer cancel()
+	storage, cancel, err := database.NewJSONStorage(cfg.DBFile)
+	defer func() {
+		err = cancel()
+		if err != nil {
+			log.Error(err.Error())
+			os.Exit(1)
+		}
+	}()
+
 	if err != nil {
 		log.Error(err.Error())
 		os.Exit(1)
@@ -55,14 +62,13 @@ func main() {
 	client := xkcd.NewClient()
 
 	// read site
-	log.Debug("Reading all comics from site")
 	var comics map[int]xkcd.ComicInfo
 	if userFlags.NumberComics > 0 {
 		log.Debug(fmt.Sprintf("Read only %d comics", userFlags.NumberComics))
-		comics = xkcd.GetComics(client, cfg.SourceUrl, log, userFlags.NumberComics)
+		comics = xkcd.GetComics(client, cfg.SourceURL, log, userFlags.NumberComics)
 	} else {
-		log.Debug(fmt.Sprintf("Read all comics from %s", cfg.SourceUrl))
-		comics = xkcd.GetComics(client, cfg.SourceUrl, log)
+		log.Debug(fmt.Sprintf("Read all comics from %s", cfg.SourceURL))
+		comics = xkcd.GetComics(client, cfg.SourceURL, log)
 	}
 	if comics == nil {
 		log.Error("Cannot read all comics from site")
@@ -78,7 +84,7 @@ func main() {
 	}
 
 	// normalize transcripts
-	comicsToJson := make(map[int]database.ComicJsonUnit)
+	comicsToJSON := make(map[int]database.JSONComicUnit)
 	log.Debug("Normalize transcripts")
 	wg := sync.WaitGroup{}
 	mapMutex := sync.Mutex{}
@@ -86,15 +92,15 @@ func main() {
 		wg.Add(1)
 		go func(comic xkcd.ComicInfo) {
 			defer wg.Done()
-			var currentUnit database.ComicJsonUnit
-			currentUnit.Url = comic.Img
+			var currentUnit database.JSONComicUnit
+			currentUnit.URL = comic.Img
 			keywords, err := st.NormalizeString(comic.Transcript)
 			if err != nil {
 				log.Error("Cannot normalize transcript", "comicID", comic.Num, "error", err)
 			}
 			currentUnit.Keywords = keywords
 			mapMutex.Lock()
-			comicsToJson[comic.Num] = currentUnit
+			comicsToJSON[comic.Num] = currentUnit
 			mapMutex.Unlock()
 		}(comic)
 	}
@@ -103,6 +109,6 @@ func main() {
 
 	// save to database
 	log.Debug("Save to database")
-	storage.SaveComics(comicsToJson, log, userFlags.OutputToConsole)
+	storage.SaveComics(comicsToJSON, log, userFlags.OutputToConsole)
 
 }
