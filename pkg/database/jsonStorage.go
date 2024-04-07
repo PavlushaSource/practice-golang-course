@@ -7,27 +7,27 @@ import (
 	"os"
 )
 
-type ComicJsonUnit struct {
-	Url      string   `json:"url"`
+type JSONComicUnit struct {
+	URL      string   `json:"url"`
 	Keywords []string `json:"keywords"`
 }
 
-type JsonStorage struct {
+type JSONStorage struct {
 	storage *os.File
 }
 
-func NewJsonStorage(jsonPath string) (*JsonStorage, func() error, error) {
+func NewJSONStorage(jsonPath string) (*JSONStorage, func() error, error) {
 	file, err := os.Create(jsonPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating json file: %w", err)
 	}
 
-	return &JsonStorage{
+	return &JSONStorage{
 		storage: file,
 	}, file.Close, nil
 }
 
-func (s *JsonStorage) SaveComics(comics map[int]ComicJsonUnit, log *slog.Logger, outputToConsole bool) {
+func (s *JSONStorage) SaveComics(comics map[int]JSONComicUnit, log *slog.Logger, outputToConsole bool) {
 	bytes, err := json.MarshalIndent(comics, "", "  ")
 	if err != nil {
 		log.Error("cannot marshal json", "error", err)
@@ -42,7 +42,7 @@ func (s *JsonStorage) SaveComics(comics map[int]ComicJsonUnit, log *slog.Logger,
 	if outputToConsole {
 		for i := 1; i <= len(comics); i++ {
 			if _, exist := comics[i]; exist {
-				log.Info("comic saved", "comicID", i, "keywords", comics[i].Keywords, "imgUrl", comics[i].Url)
+				log.Info("comic saved", "comicID", i, "keywords", comics[i].Keywords, "imgUrl", comics[i].URL)
 			}
 		}
 	}

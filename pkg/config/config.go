@@ -8,8 +8,8 @@ import (
 
 type Config struct {
 	Env             string `yaml:"env" envDefault:"local"`
-	DbFile          string `yaml:"db_file" envDefault:"database.json"`
-	SourceUrl       string `yaml:"source_url" envDefault:"https://xkcd.com"`
+	DBFile          string `yaml:"db_file" envDefault:"database.json"`
+	SourceURL       string `yaml:"source_url" envDefault:"https://xkcd.com"`
 	SpellcheckModel string `yaml:"spellcheck_model" env:"SPELLCHECK_PATH" env-required:"true"`
 }
 

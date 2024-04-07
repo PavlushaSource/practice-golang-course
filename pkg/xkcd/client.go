@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-var statusError = errors.New("response status error")
+var errStatus = errors.New("response status error")
 
 const (
 	xkcd = "https://xkcd.com"
@@ -50,10 +50,10 @@ func findNumberComics(client http.Client, urlName string) (int, error) {
 	}
 }
 
-func generateComicUrl(id int, siteUrl string) string {
-	switch siteUrl {
+func generateComicURL(id int, siteURL string) string {
+	switch siteURL {
 	case xkcd:
-		return fmt.Sprintf("%s/%d/info.0.json", siteUrl, id)
+		return fmt.Sprintf("%s/%d/info.0.json", siteURL, id)
 	default:
 		return ""
 	}
@@ -82,10 +82,10 @@ func GetComics(client *http.Client, urlName string, log *slog.Logger, numbersToG
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			comicUrl := generateComicUrl(i, urlName)
-			comic, err := getComicFromURL(client, comicUrl)
+			comicURL := generateComicURL(i, urlName)
+			comic, err := getComicFromURL(client, comicURL)
 			switch {
-			case errors.Is(err, statusError):
+			case errors.Is(err, errStatus):
 				log.Debug(err.Error(), "comicID", i)
 				return
 			case err != nil:
@@ -114,7 +114,7 @@ func getComicFromURL(client *http.Client, urlName string) (*ComicInfo, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("cannot get comic from url %s: %w=%d", urlName, statusError, resp.StatusCode)
+		return nil, fmt.Errorf("cannot get comic from url %s: %w=%d", urlName, errStatus, resp.StatusCode)
 	}
 
 	var comic ComicInfo
