@@ -67,8 +67,7 @@ func (stemmer *snowballStemmer) normalizeWords(words []string) ([]string, error)
 	res := make([]string, 0, len(words))
 	for _, word := range words {
 		// try convert to number
-		_, err := strconv.Atoi(word)
-		if err == nil {
+		if _, err := strconv.Atoi(word); err == nil {
 			res = append(res, word)
 			continue
 		}
@@ -80,7 +79,17 @@ func (stemmer *snowballStemmer) normalizeWords(words []string) ([]string, error)
 			}
 			res = append(res, stemWord)
 		} else {
-			return nil, fmt.Errorf("language for word: %s is not detected", word)
+			// try convert to number and resolve special cases (2007-07-01)
+			specialWords := strings.Split(word, "-")
+			for _, specialWord := range specialWords {
+				specialWord = deleteAllPunctuationWithBuilder(specialWord)
+				if _, err := strconv.Atoi(specialWord); err == nil {
+					res = append(res, specialWord)
+				} else if specialWord != "" {
+					// uncomment if you want to see the words that stemmer skips
+					//fmt.Println("language for word: ", word, "is not detected. Skip this word.")
+				}
+			}
 		}
 	}
 	return slices.Clip(res), nil

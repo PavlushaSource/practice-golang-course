@@ -2,12 +2,15 @@ package xkcd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"sync"
 )
+
+var statusError = errors.New("response status error")
 
 const (
 	xkcd = "https://xkcd.com"
@@ -24,6 +27,14 @@ func NewClient() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{MaxConnsPerHost: 100},
 	}
+}
+
+type StatusError struct {
+	status string
+}
+
+func (e *StatusError) Error() string {
+	return fmt.Sprintf("status error:  response status code=%s", e.status)
 }
 
 func findNumberComics(client http.Client, urlName string) (int, error) {
@@ -48,24 +59,36 @@ func generateComicUrl(id int, siteUrl string) string {
 	}
 }
 
-func GetComics(client *http.Client, urlName string, log *slog.Logger) map[int]ComicInfo {
+func GetComics(client *http.Client, urlName string, log *slog.Logger, numbersToGet ...int) map[int]ComicInfo {
 	log = log.With("GetComicsFromSite", urlName)
-	lastNumberComic, err := findNumberComics(*client, urlName)
-	if err != nil {
-		log.Error(err.Error())
-		return nil
+	var lastNumberComic int
+	var err error
+
+	if len(numbersToGet) > 0 {
+		lastNumberComic = numbersToGet[0]
+	} else {
+		lastNumberComic, err = findNumberComics(*client, urlName)
+		if err != nil {
+			log.Error(err.Error())
+			return nil
+		}
 	}
 
 	readComics := make(map[int]ComicInfo)
 	mapMutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
+
 	for i := 1; i <= lastNumberComic; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
 			comicUrl := generateComicUrl(i, urlName)
 			comic, err := getComicFromURL(client, comicUrl)
-			if err != nil {
+			switch {
+			case errors.Is(err, statusError):
+				log.Debug(err.Error(), "comicID", i)
+				return
+			case err != nil:
 				log.Error(err.Error(), "comicID", i)
 				return
 			}
@@ -88,6 +111,10 @@ func getComicFromURL(client *http.Client, urlName string) (*ComicInfo, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read comic from url %s: %w", urlName, err)
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("cannot get comic from url %s: %w=%d", urlName, statusError, resp.StatusCode)
 	}
 
 	var comic ComicInfo

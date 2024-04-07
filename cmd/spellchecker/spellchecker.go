@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ func main() {
 	st, err := stemmer.NewSnowballStemmer()
 	stemmer.Check(err)
 	checker := spellcheck.NewFuzzyChecker()
-	err = checker.SaveModel("spellcheck/savedModel")
+	err = checker.SaveModel("internal/resources/spellchecker/savedModel")
 	stemmer.Check(err)
 
 	normalizedWithSpellchecker, err := st.NormalizeString(input, checker)

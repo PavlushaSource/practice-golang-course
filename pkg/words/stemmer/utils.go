@@ -29,7 +29,7 @@ func Check(err error) {
 func deleteAllPunctuationWithBuilder(input string) string {
 	// punctuations without \' and -
 	punctuations := []rune{'!', '?', '.', ',', ';', ':', '\'', '"', '@', '&', '#', '$', '%', '^', '*', '(', ')', '[', ']',
-		'{', '}', '<', '>', '/', '|', '\\', '`', '~', '='}
+		'{', '}', '<', '>', '/', '|', '\\', '`', '~', '=', '+', '_'}
 
 	b := strings.Builder{}
 	for _, r := range input {
