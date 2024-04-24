@@ -15,7 +15,6 @@ run: lint
 
 clear:
 	@rm ./xkcd
-	@rm ./database.json
 
 clearModel:
 	@rm ./internal/resources/spellchecker/savedModel
