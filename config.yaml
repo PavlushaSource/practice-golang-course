@@ -1,4 +1,0 @@
-env: "local" # local, dev, prod
-db_file: "database.json"
-source_url: "https://xkcd.com"
-spellcheck_model: "internal/resources/spellchecker/savedModel"
