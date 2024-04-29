@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 )
@@ -12,7 +11,7 @@ const (
 	envProd  = "prod"
 )
 
-func SetupLogger(env string) (*slog.Logger, error) {
+func SetupLogger(env string) *slog.Logger {
 	var log *slog.Logger
 	switch env {
 	case envLocal:
@@ -21,9 +20,6 @@ func SetupLogger(env string) (*slog.Logger, error) {
 		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	case envProd:
 		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	default:
-		return nil, fmt.Errorf("invalid env: %s", env)
 	}
-
-	return log, nil
+	return log
 }

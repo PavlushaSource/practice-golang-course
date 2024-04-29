@@ -1,5 +1,24 @@
-env: "local" # local, dev, prod
-db_file: "database.json"
-source_url: "https://xkcd.com"
-parallel: 50 # TODO провести исследование на число worker'ов
-batch_size: 100
+App:
+  env: local
+
+HTTP:
+  host: localhost
+  port: 8080
+  update-interval: 1m
+
+DB:
+  host: localhost
+  port: 5432
+  username: sqlite
+  password: sqlite
+  db-name: xkcd
+  connections: 1
+
+JSONFlat:
+  index-path: index.json
+  file-path: database.json
+
+ComixSource:
+  url: https://xkcd.com
+  parallel: 50
+  batch_size: 100
