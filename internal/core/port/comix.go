@@ -6,7 +6,7 @@ import (
 )
 
 type ComixRepository interface {
-	WriteComixs(comix []domain.Comix) error
+	WriteComixs(inputComixs []domain.Comix) error
 	GetComixByID(ID uint64) (*domain.Comix, error)
 	ListComixs() ([]domain.Comix, error)
 }

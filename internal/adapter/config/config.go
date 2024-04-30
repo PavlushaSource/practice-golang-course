@@ -21,7 +21,7 @@ type Config struct {
 	HTTP struct {
 		Port           string        `yaml:"port" env-description:"Server port" env-default:"8080"`
 		Host           string        `yaml:"host" env-description:"Server host" env-default:"localhost"`
-		UpdateInterval time.Duration `yaml:"update-interval" envDefault:"24h"`
+		UpdateInterval time.Duration `yaml:"update_interval" envDefault:"24h"`
 	} `yaml:"HTTP"`
 
 	DB struct {
@@ -29,13 +29,13 @@ type Config struct {
 		Port        string `yaml:"port" env-description:"Database port"`
 		Username    string `yaml:"username" env-description:"Database user name"`
 		Password    string `env:"DB_PASSWORD" env-description:"Database user password"`
-		Name        string `yaml:"db-name" env-description:"Database name"`
+		Name        string `yaml:"db_name" env-description:"Database name"`
 		Connections int    `yaml:"connections" env-description:"Total number of database connections"`
 	} `yaml:"DB"`
 
 	JSONFlat struct {
-		DBFilepath    string `yaml:"file-path" env-description:"Path to comixs DB json file" envDefault:"database.json"`
-		IndexFilepath string `yaml:"index-path" env-description:"Path to index comixs json file" envDefault:"index.json"`
+		DBFilepath    string `yaml:"file_path" env-description:"Path to comixs DB json file" envDefault:"database.json"`
+		IndexFilepath string `yaml:"index_path" env-description:"Path to index comixs json file" envDefault:"index.json"`
 	} `yaml:"JSONFlat"`
 
 	ComixSource struct {
@@ -43,6 +43,17 @@ type Config struct {
 		Parallel  int    `yaml:"parallel" envRequired:"true"`
 		BatchSize int    `yaml:"batch_size" envRequired:"true"`
 	} `yaml:"ComixSource"`
+
+	Spellchecker struct {
+		ModelPath    string `yaml:"model_path" env-required:"true"`
+		DictPathEn   string `yaml:"dict_path_en" env-required:"true"`
+		DictPathRus  string `yaml:"dict_path_rus" env-required:"true"`
+		AllWordsPath string `yaml:"all_words" env-required:"true"`
+	} `yaml:"Spellchecker"`
+
+	Normalize struct {
+		stopwordsPath string `yaml:"stopword_path" env-required:"true"`
+	}
 }
 
 func New() (*Config, error) {

@@ -2,7 +2,7 @@ package xkcd
 
 import (
 	"github.com/PavlushaSource/yadro-practice-course/internal/core/domain"
-	"github.com/PavlushaSource/yadro-practice-course/pkg/words/stemmer"
+	"github.com/PavlushaSource/yadro-practice-course/internal/core/port"
 	"strings"
 )
 
@@ -20,20 +20,20 @@ type Comix struct {
 	Day        string `json:"day"`
 }
 
-func (c *Comix) Format(st stemmer.Stemmer) domain.Comix {
+func (c *Comix) Format(normalizeSvc port.NormalizeService) domain.Comix {
 	var comix domain.Comix
 
-	safeTitle, err := st.NormalizeString(c.SafeTitle)
+	safeTitle, err := normalizeSvc.Normalize(c.SafeTitle)
 	if err != nil {
 		safeTitle = strings.Split(c.SafeTitle, " ")
 	}
 
-	transcript, err := st.NormalizeString(c.Transcript)
+	transcript, err := normalizeSvc.Normalize(c.Transcript)
 	if err != nil {
 		transcript = strings.Split(c.Transcript, " ")
 	}
 
-	alt, err := st.NormalizeString(c.Alt)
+	alt, err := normalizeSvc.Normalize(c.Alt)
 	if err != nil {
 		alt = strings.Split(c.Alt, " ")
 	}

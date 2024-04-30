@@ -24,13 +24,14 @@ func NewRouter(
 	mux := http.NewServeMux()
 
 	//Get from Index file
-	mux.HandleFunc("GET /pics", comixHandler.GetRelevantURLIndex(ctx))
+	//mux.HandleFunc("GET /pics", comixHandler.GetRelevantURLIndex(ctx))
 
 	// Uncomment for compare simple find relevant URL
 	//mux.HandleFunc("GET /pics", comixHandler.GetRelevantURL)
 
-	mux.HandleFunc("POST /update", comixHandler.Update(ctx))
+	//mux.HandleFunc("POST /update", comixHandler.Update(ctx))
 
+	mux.HandleFunc("/hello", comixHandler.SayHello(ctx))
 	//TODO add logger middleware
 
 	server := http.Server{
@@ -63,6 +64,7 @@ func (r *Router) Serve(updateInterval time.Duration, ctx context.Context, comixS
 			}
 			return nil
 		case <-ticker.C:
+			slog.Info("update comix DB")
 			_, err := comixSvc.DownloadAll(ctx)
 			if err != nil {
 				return fmt.Errorf("update comix download failed: %w", err)

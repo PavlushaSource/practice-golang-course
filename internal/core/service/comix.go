@@ -10,7 +10,6 @@ import (
 	xkcdDomain "github.com/PavlushaSource/yadro-practice-course/internal/core/domain/xkcd"
 	"github.com/PavlushaSource/yadro-practice-course/internal/core/port"
 	"github.com/PavlushaSource/yadro-practice-course/internal/core/util/xkcd"
-	"github.com/PavlushaSource/yadro-practice-course/pkg/words/stemmer"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"net/http"
@@ -18,12 +17,12 @@ import (
 )
 
 type ComixService struct {
-	indexRepo port.IndexRepository
-	comixRepo port.ComixRepository
-	batchSize int
-	workers   int
-	siteURL   string
-	stemmer   stemmer.Stemmer
+	indexRepo    port.IndexRepository
+	comixRepo    port.ComixRepository
+	normalizeSrv port.NormalizeService
+	batchSize    int
+	workers      int
+	siteURL      string
 }
 
 func (s *ComixService) GetRelevantComixs(phrase string) ([]domain.Comix, error) {
@@ -32,28 +31,27 @@ func (s *ComixService) GetRelevantComixs(phrase string) ([]domain.Comix, error) 
 }
 
 func (s *ComixService) GetRelevantComixsIndex(phrase string) ([]domain.Comix, error) {
-	//TODO implement me
+	_, err := s.indexRepo.Get()
+	if err != nil {
+		return nil, fmt.Errorf("error get index: %w", err)
+	}
+
 	panic("implement me")
 }
 
 func NewComixService(
 	indexRepo port.IndexRepository,
 	comixRepo port.ComixRepository,
+	normalizeSrv port.NormalizeService,
 	cfg *config.Config,
 ) *ComixService {
-
-	st, err := stemmer.NewSnowballStemmer()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	return &ComixService{
-		indexRepo: indexRepo,
-		comixRepo: comixRepo,
-		batchSize: cfg.ComixSource.BatchSize,
-		workers:   cfg.ComixSource.Parallel,
-		siteURL:   cfg.ComixSource.URL,
-		stemmer:   st,
+		indexRepo:    indexRepo,
+		comixRepo:    comixRepo,
+		normalizeSrv: normalizeSrv,
+		batchSize:    cfg.ComixSource.BatchSize,
+		workers:      cfg.ComixSource.Parallel,
+		siteURL:      cfg.ComixSource.URL,
 	}
 }
 
@@ -77,7 +75,7 @@ func (s *ComixService) DownloadAll(ctx context.Context) ([]domain.Comix, error) 
 	for w := 1; w <= s.workers; w++ {
 		wg.Go(
 			func() error {
-				return downloadWorker(ctx, neededComicsID, batches, client, s.batchSize, s.siteURL, s.stemmer)
+				return downloadWorker(ctx, neededComicsID, batches, client, s.batchSize, s.siteURL, s.normalizeSrv)
 			},
 		)
 	}
@@ -164,7 +162,7 @@ func downloadWorker(
 	client *http.Client,
 	batchSize int,
 	siteURL string,
-	stemmer stemmer.Stemmer,
+	normalizeSrv port.NormalizeService,
 ) error {
 	batch := make([]domain.Comix, 0, batchSize)
 	defer func() {
@@ -181,7 +179,7 @@ func downloadWorker(
 				return fmt.Errorf("error downloading comic: %w", err)
 			}
 
-			comix := xkcdComix.Format(stemmer)
+			comix := xkcdComix.Format(normalizeSrv)
 			batch = append(batch, comix)
 
 			if len(batch) == batchSize {

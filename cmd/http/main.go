@@ -7,6 +7,8 @@ import (
 	"github.com/PavlushaSource/yadro-practice-course/internal/adapter/logger"
 	"github.com/PavlushaSource/yadro-practice-course/internal/adapter/storage/json/repository"
 	"github.com/PavlushaSource/yadro-practice-course/internal/core/service"
+	"github.com/PavlushaSource/yadro-practice-course/pkg/words/spellcheck"
+	"github.com/PavlushaSource/yadro-practice-course/pkg/words/stemmer"
 	"log"
 	"log/slog"
 	"os"
@@ -29,16 +31,33 @@ func main() {
 	DB := repository.NewComixRepository(cfg.JSONFlat.DBFilepath)
 	indexDB := repository.NewIndexRepository(cfg.JSONFlat.IndexFilepath)
 
-	// Dependency injection
-	// Comix
+	// ctx with interruption
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	slog.Info("Initialize and download comixs")
+	// Dependency injection
+
+	// Normalize
+	slog.Info("Initialize stemmer")
+	st, err := stemmer.NewSnowballStemmer(cfg.Normalize.StopWordsPath)
+	if err != nil {
+		slog.Error("Initialize stemmer failed", "error", err)
+		os.Exit(1)
+	}
+	ch := spellcheck.NewFuzzyChecker(
+		cfg.Spellchecker.ModelPath,
+		cfg.Spellchecker.AllWordsPath,
+		[]string{cfg.Spellchecker.DictPathEn, cfg.Spellchecker.DictPathRus},
+	)
+	normalizeService := service.NewNormalizeService(st, ch)
+
+	// Comix
+	slog.Info("Initialize and try download comixs")
 	comixService := service.NewComixService(indexDB, DB, cfg)
 	comixHandler := http.NewComixHandler(comixService)
 
 	_, err = comixService.DownloadAll(ctx)
+
 	if err != nil {
 		slog.Error("Download failed", "error", err)
 		os.Exit(1)
