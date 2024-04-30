@@ -24,14 +24,16 @@ func NewRouter(
 	mux := http.NewServeMux()
 
 	//Get from Index file
-	//mux.HandleFunc("GET /pics", comixHandler.GetRelevantURLIndex(ctx))
+	//mux.HandleFunc("GET /pics", comixHandler.SuggestRelevantURLIndex(ctx))
 
 	// Uncomment for compare simple find relevant URL
 	//mux.HandleFunc("GET /pics", comixHandler.GetRelevantURL)
 
 	//mux.HandleFunc("POST /update", comixHandler.Update(ctx))
 
-	mux.HandleFunc("/hello", comixHandler.SayHello(ctx))
+	mux.HandleFunc("/hello", comixHandler.SayHello())
+	mux.HandleFunc("GET /pics", comixHandler.GetSuggestRelevantURL())
+
 	//TODO add logger middleware
 
 	server := http.Server{

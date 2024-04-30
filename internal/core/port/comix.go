@@ -13,5 +13,5 @@ type ComixRepository interface {
 
 type ComixService interface {
 	DownloadAll(ctx context.Context) ([]domain.Comix, error)
-	GetRelevantComics(phrase string, length ...int) ([]uint64, error)
+	GetRelevantComics(phrase string, length int) ([]domain.Comix, error)
 }

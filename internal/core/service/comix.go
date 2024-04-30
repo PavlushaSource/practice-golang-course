@@ -26,7 +26,7 @@ type ComixService struct {
 	siteURL      string
 }
 
-func (s *ComixService) GetRelevantComics(phrase string, length ...int) ([]uint64, error) {
+func (s *ComixService) GetRelevantComics(phrase string, length int) ([]domain.Comix, error) {
 	// correct and normalize user request
 	keywords, err := s.normalizeSrv.CorrectAndNormalize(phrase)
 	if err != nil {
@@ -58,15 +58,21 @@ func (s *ComixService) GetRelevantComics(phrase string, length ...int) ([]uint64
 		},
 	)
 
-	resultSlice := make([]uint64, 0, len(countID))
+	resultSlice := make([]uint64, 0, length)
 	for _, ID := range neededID {
 		resultSlice = append(resultSlice, ID)
+		if len(resultSlice) == length {
+			break
+		}
 	}
 
-	if len(length) == 0 {
-		return resultSlice, nil
+	// get comics by needed ID
+	comicsSlice := make([]domain.Comix, 0, len(resultSlice))
+	for _, id := range resultSlice {
+		comic, _ := s.comixRepo.GetComixByID(id)
+		comicsSlice = append(comicsSlice, *comic)
 	}
-	return resultSlice[:length[0]], nil
+	return comicsSlice, nil
 }
 
 func NewComixService(
