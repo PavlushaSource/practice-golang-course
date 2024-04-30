@@ -17,7 +17,7 @@ import (
 	"slices"
 )
 
-type XkcdService struct {
+type ComixService struct {
 	indexRepo port.IndexRepository
 	comixRepo port.ComixRepository
 	batchSize int
@@ -26,23 +26,38 @@ type XkcdService struct {
 	stemmer   stemmer.Stemmer
 }
 
+func (s *ComixService) GetRelevantComixs(phrase string) ([]domain.Comix, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *ComixService) GetRelevantComixsIndex(phrase string) ([]domain.Comix, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewComixService(
 	indexRepo port.IndexRepository,
 	comixRepo port.ComixRepository,
-	cfg config.Config,
-	stemmer stemmer.Stemmer,
-) *XkcdService {
-	return &XkcdService{
+	cfg *config.Config,
+) *ComixService {
+
+	st, err := stemmer.NewSnowballStemmer()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return &ComixService{
 		indexRepo: indexRepo,
 		comixRepo: comixRepo,
 		batchSize: cfg.ComixSource.BatchSize,
 		workers:   cfg.ComixSource.Parallel,
 		siteURL:   cfg.ComixSource.URL,
-		stemmer:   stemmer,
+		stemmer:   st,
 	}
 }
 
-func (s *XkcdService) DownloadAll(ctx context.Context) ([]domain.Comix, error) {
+func (s *ComixService) DownloadAll(ctx context.Context) ([]domain.Comix, error) {
 	wg, ctx := errgroup.WithContext(ctx)
 
 	neededComicsID := make(chan uint64)

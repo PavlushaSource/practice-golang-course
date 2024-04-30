@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/PavlushaSource/yadro-practice-course/internal/core/domain"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -16,15 +17,15 @@ type ComixJSONStorage struct {
 
 const perm = 0644
 
-func NewComixRepository(filePath string) (*ComixJSONStorage, error) {
+func NewComixRepository(filePath string) *ComixJSONStorage {
 	_, err := os.Stat(filePath)
 	if errors.Is(err, os.ErrNotExist) {
 		_, err = os.Create(filePath)
 		if err != nil {
-			return nil, fmt.Errorf("error creating json file: %w", err)
+			log.Fatal("error creating json file", err)
 		}
 	}
-	return &ComixJSONStorage{filePath: filePath}, nil
+	return &ComixJSONStorage{filePath: filePath}
 }
 
 // WriteComixs Atomic write one or more comix to JSON DB

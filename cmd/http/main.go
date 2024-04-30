@@ -1,11 +1,16 @@
 package main
 
 import (
+	"context"
 	"github.com/PavlushaSource/yadro-practice-course/internal/adapter/config"
+	"github.com/PavlushaSource/yadro-practice-course/internal/adapter/handler/http"
 	"github.com/PavlushaSource/yadro-practice-course/internal/adapter/logger"
 	"github.com/PavlushaSource/yadro-practice-course/internal/adapter/storage/json/repository"
+	"github.com/PavlushaSource/yadro-practice-course/internal/core/service"
 	"log"
+	"log/slog"
 	"os"
+	"os/signal"
 )
 
 func main() {
@@ -17,22 +22,37 @@ func main() {
 	}
 
 	// Set Log
-	Log := logger.SetupLogger(cfg.App.Env)
+	slog.SetDefault(logger.SetupLogger(cfg.App.Env))
 
 	// Init DB
 
-	DB, err := repository.NewComixRepository(cfg.JSONFlat.DBFilepath)
-	if err != nil {
-		Log.Error("Failed to init db", "error", err)
+	DB := repository.NewComixRepository(cfg.JSONFlat.DBFilepath)
+	indexDB := repository.NewIndexRepository(cfg.JSONFlat.IndexFilepath)
 
+	// Dependency injection
+	// Comix
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	slog.Info("Initialize and download comixs")
+	comixService := service.NewComixService(indexDB, DB, cfg)
+	comixHandler := http.NewComixHandler(comixService)
+
+	_, err = comixService.DownloadAll(ctx)
+	if err != nil {
+		slog.Error("Download failed", "error", err)
 		os.Exit(1)
 	}
 
-	// Init index DB
-	//TODO add index DB initializer
-
 	// Run server
-	//TODO add handlers
-
-	_ = DB
+	srv, err := http.NewRouter(cfg, comixHandler, ctx)
+	if err != nil {
+		slog.Error("Initialize server failed", "error", err)
+		os.Exit(1)
+	}
+	err = srv.Serve(cfg.HTTP.UpdateInterval, ctx, comixService)
+	if err != nil {
+		slog.Error("Run server failed", "error", err)
+		os.Exit(1)
+	}
 }
