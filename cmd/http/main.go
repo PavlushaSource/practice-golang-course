@@ -39,7 +39,7 @@ func main() {
 
 	// Normalize
 	slog.Info("Initialize stemmer")
-	st, err := stemmer.NewSnowballStemmer(cfg.Normalize.StopWordsPath)
+	st, err := stemmer.NewSnowballStemmer(cfg.Normalize.StopwordsPath)
 	if err != nil {
 		slog.Error("Initialize stemmer failed", "error", err)
 		os.Exit(1)
@@ -53,11 +53,10 @@ func main() {
 
 	// Comix
 	slog.Info("Initialize and try download comixs")
-	comixService := service.NewComixService(indexDB, DB, cfg)
+	comixService := service.NewComixService(indexDB, DB, normalizeService, cfg)
 	comixHandler := http.NewComixHandler(comixService)
 
 	_, err = comixService.DownloadAll(ctx)
-
 	if err != nil {
 		slog.Error("Download failed", "error", err)
 		os.Exit(1)

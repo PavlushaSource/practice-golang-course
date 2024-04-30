@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"slices"
+	"sort"
 )
 
 type ComixService struct {
@@ -25,18 +26,47 @@ type ComixService struct {
 	siteURL      string
 }
 
-func (s *ComixService) GetRelevantComixs(phrase string) ([]domain.Comix, error) {
-	//TODO implement me
-	panic("implement me")
-}
+func (s *ComixService) GetRelevantComics(phrase string, length ...int) ([]uint64, error) {
+	// correct and normalize user request
+	keywords, err := s.normalizeSrv.CorrectAndNormalize(phrase)
+	if err != nil {
+		return nil, fmt.Errorf("error normalize phrase: %w", err)
+	}
 
-func (s *ComixService) GetRelevantComixsIndex(phrase string) ([]domain.Comix, error) {
-	_, err := s.indexRepo.Get()
+	// get index map
+	index, err := s.indexRepo.Get()
 	if err != nil {
 		return nil, fmt.Errorf("error get index: %w", err)
 	}
 
-	panic("implement me")
+	countID := make(map[uint64]int)
+	for _, keyword := range keywords {
+		for _, id := range index.Index[keyword] {
+			countID[id]++
+
+		}
+	}
+
+	neededID := make([]uint64, 0)
+	for ID := range countID {
+		neededID = append(neededID, ID)
+	}
+
+	sort.SliceStable(
+		neededID, func(i, j int) bool {
+			return countID[neededID[uint64(i)]] > countID[neededID[uint64(j)]]
+		},
+	)
+
+	resultSlice := make([]uint64, 0, len(countID))
+	for _, ID := range neededID {
+		resultSlice = append(resultSlice, ID)
+	}
+
+	if len(length) == 0 {
+		return resultSlice, nil
+	}
+	return resultSlice[:length[0]], nil
 }
 
 func NewComixService(

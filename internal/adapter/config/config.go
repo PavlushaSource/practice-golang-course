@@ -45,15 +45,15 @@ type Config struct {
 	} `yaml:"ComixSource"`
 
 	Spellchecker struct {
-		ModelPath    string `yaml:"model_path" env-required:"true"`
-		DictPathEn   string `yaml:"dict_path_en" env-required:"true"`
-		DictPathRus  string `yaml:"dict_path_rus" env-required:"true"`
-		AllWordsPath string `yaml:"all_words" env-required:"true"`
+		ModelPath    string `yaml:"model_path" envDefault:"pkg/assets/resources/spellchecker/savedModel"`
+		DictPathEn   string `yaml:"dict_path_en" envDefault:"pkg/assets/resources/words/dictionaries/10000-english.txt"`
+		DictPathRus  string `yaml:"dict_path_rus" envDefault:"pkg/assets/resources/words/dictionaries/10000-russian.txt"`
+		AllWordsPath string `yaml:"all_words" envDefault:"pkg/assets/resources/words/dictionaries/all-words.txt"`
 	} `yaml:"Spellchecker"`
 
 	Normalize struct {
-		stopwordsPath string `yaml:"stopword_path" env-required:"true"`
-	}
+		StopwordsPath string `yaml:"stopword_path" envDefault:"pkg/assets/resources/words/stopwords/stopwords-iso.json"`
+	} `yaml:"Normalize"`
 }
 
 func New() (*Config, error) {
