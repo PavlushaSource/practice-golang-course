@@ -26,7 +26,14 @@ func (ch *ComicHandler) UpdateHandler(ctx context.Context) http.HandlerFunc {
 			errorResponse(w, http.StatusInternalServerError, err)
 			return
 		}
+
 		newComics, err := ch.svc.DownloadAll(ctx)
+
+		if err != nil {
+			slog.Error("DownloadAll failed", "error", err)
+			errorResponse(w, http.StatusInternalServerError, err)
+			return
+		}
 		updatedCount := len(newComics)
 		rsp := newUpdateResponse(updatedCount, lastCount+updatedCount)
 		w.WriteHeader(http.StatusOK)
