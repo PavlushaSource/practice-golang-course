@@ -1,20 +1,19 @@
 .DEFAULT_GOAL := build
 
-.PHONY: fmt lint run build clear
-fmt:
-	@go fmt ./...
+BINARYNAME := xkcd-server
+SERVERPATH := ./cmd/http
 
-lint: fmt
+.PHONY: style test/race build run
+style:
+	@go fmt ./...
 	@golangci-lint run ./...
 
-build: lint
-	@go build -race -o xkcd ./cmd/xkcd/
+test/race:
+	@go build -race -o ${BINARYNAME} ${SERVERPATH}
+	@rm ./${BINARYNAME}
 
-run: lint
-	@go run -race ./cmd/xkcd/
+build:
+	@go build -o ${BINARYNAME} ${SERVERPATH}
 
-clear:
-	@rm ./xkcd
-
-clearModel:
-	@rm ./internal/resources/spellchecker/savedModel
+run:
+	@go run ${SERVERPATH}

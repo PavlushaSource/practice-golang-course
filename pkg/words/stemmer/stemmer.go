@@ -82,7 +82,7 @@ func (stemmer *snowballStemmer) normalizeWords(words []string) ([]string, error)
 			// try convert to number and resolve special cases (2007-07-01)
 			specialWords := strings.Split(word, "-")
 			for _, specialWord := range specialWords {
-				specialWord = deleteAllPunctuationWithBuilder(specialWord)
+				specialWord = deleteAllPunctuation(specialWord)
 				if _, err := strconv.Atoi(specialWord); err == nil {
 					res = append(res, specialWord)
 					continue
@@ -109,11 +109,14 @@ func removeDuplicateStrings(s []string) []string {
 	return stringWithoutDuplicate
 }
 
-func (stemmer *snowballStemmer) NormalizeString(input string, spellchecker ...spellcheck.SpellChecker) ([]string, error) {
+func (stemmer *snowballStemmer) NormalizeString(input string, spellchecker ...spellcheck.SpellChecker) (
+	[]string,
+	error,
+) {
 	if len(spellchecker) > 0 {
 		input = spellchecker[0].SpellCheckString(input)
 	}
-	wordsWithoutStopWords := stemmer.deleteStopWords(deleteAllPunctuationWithBuilder(input))
+	wordsWithoutStopWords := stemmer.deleteStopWords(deleteAllPunctuation(input))
 	resString, err := stemmer.normalizeWords(wordsWithoutStopWords)
 	if err != nil {
 		return nil, fmt.Errorf("error normalize string: %w", err)
@@ -122,15 +125,10 @@ func (stemmer *snowballStemmer) NormalizeString(input string, spellchecker ...sp
 	return resString, nil
 }
 
-func NewSnowballStemmer(stopWordsPath ...string) (Stemmer, error) {
+func NewSnowballStemmer(stopWordsPath string) (Stemmer, error) {
 	availableLanguages := []ISOCode639_1{"en", "ru"} // not need more for now
-	var currentStopWordsPath string
 
-	if len(stopWordsPath) > 0 {
-		currentStopWordsPath = stopWordsPath[0]
-	} else {
-		currentStopWordsPath = "internal/resources/words/stopwords/stopwords-iso.json"
-	}
+	currentStopWordsPath := "pkg/assets/resources/words/stopwords/stopwords-iso.json"
 
 	jsonFile, err := os.Open(currentStopWordsPath)
 

@@ -1,5 +1,33 @@
-env: "local" # local, dev, prod
-db_file: "database.json"
-source_url: "https://xkcd.com"
-parallel: 50 # TODO провести исследование на число worker'ов
-batch_size: 100
+App:
+  env: local
+
+HTTP:
+  host: localhost
+  port: 8080
+  update_interval: 1m
+
+DB:
+  host: localhost
+  port: 5432
+  username: sqlite
+  password: sqlite
+  db_name: xkcd
+  connections: 1
+
+JSONFlat:
+  index_path: index.json
+  file_path: database.json
+
+ComicsSource:
+  url: https://xkcd.com
+  parallel: 50
+  batch_size: 100
+
+Spellchecker:
+  model_path: pkg/assets/resources/spellchecker/savedModel
+  dict_path_en: bpkg/assets/resources/words/dictionaries/10000-english.txt
+  dict_path_rus: pkg/assets/resources/words/dictionaries/10000-russian.txt
+  all_words: pkg/assets/resources/words/dictionaries/all-words.txt
+
+Normalize:
+  stopword_path: pkg/assets/resources/words/stopwords/stopwords-iso.json
