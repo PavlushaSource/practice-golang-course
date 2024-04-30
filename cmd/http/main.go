@@ -28,7 +28,7 @@ func main() {
 
 	// Init DB
 
-	DB := repository.NewComixRepository(cfg.JSONFlat.DBFilepath)
+	DB := repository.NewComicRepository(cfg.JSONFlat.DBFilepath)
 	indexDB := repository.NewIndexRepository(cfg.JSONFlat.IndexFilepath)
 
 	// ctx with interruption
@@ -51,24 +51,24 @@ func main() {
 	)
 	normalizeService := service.NewNormalizeService(st, ch)
 
-	// Comix
-	slog.Info("Initialize and try download comixs")
-	comixService := service.NewComixService(indexDB, DB, normalizeService, cfg)
-	comixHandler := http.NewComixHandler(comixService)
+	// Comic
+	slog.Info("Initialize and try download comics")
+	comicService := service.NewComicsService(indexDB, DB, normalizeService, cfg)
+	comicHandler := http.NewComicHandler(comicService)
 
-	_, err = comixService.DownloadAll(ctx)
+	_, err = comicService.DownloadAll(ctx)
 	if err != nil {
 		slog.Error("Download failed", "error", err)
 		os.Exit(1)
 	}
 
 	// Run server
-	srv, err := http.NewRouter(cfg, comixHandler, ctx)
+	srv, err := http.NewRouter(cfg, comicHandler, ctx)
 	if err != nil {
 		slog.Error("Initialize server failed", "error", err)
 		os.Exit(1)
 	}
-	err = srv.Serve(cfg.HTTP.UpdateInterval, ctx, comixService)
+	err = srv.Serve(cfg.HTTP.UpdateInterval, ctx, comicService)
 	if err != nil {
 		slog.Error("Run server failed", "error", err)
 		os.Exit(1)

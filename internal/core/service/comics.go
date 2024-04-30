@@ -17,16 +17,24 @@ import (
 	"sort"
 )
 
-type ComixService struct {
+type ComicsService struct {
 	indexRepo    port.IndexRepository
-	comixRepo    port.ComixRepository
+	comicsRepo   port.ComicsRepository
 	normalizeSrv port.NormalizeService
 	batchSize    int
 	workers      int
 	siteURL      string
 }
 
-func (s *ComixService) GetRelevantComics(phrase string, length int) ([]domain.Comix, error) {
+func (s *ComicsService) GetComics() ([]domain.Comic, error) {
+	comics, err := s.comicsRepo.ListComics()
+	if err != nil {
+		return nil, fmt.Errorf("error get comics: %w", err)
+	}
+	return comics, nil
+}
+
+func (s *ComicsService) GetRelevantComics(phrase string, length int) ([]domain.Comic, error) {
 	// correct and normalize user request
 	keywords, err := s.normalizeSrv.CorrectAndNormalize(phrase)
 	if err != nil {
@@ -67,41 +75,41 @@ func (s *ComixService) GetRelevantComics(phrase string, length int) ([]domain.Co
 	}
 
 	// get comics by needed ID
-	comicsSlice := make([]domain.Comix, 0, len(resultSlice))
+	comicsSlice := make([]domain.Comic, 0, len(resultSlice))
 	for _, id := range resultSlice {
-		comic, _ := s.comixRepo.GetComixByID(id)
+		comic, _ := s.comicsRepo.GetComicByID(id)
 		comicsSlice = append(comicsSlice, *comic)
 	}
 	return comicsSlice, nil
 }
 
-func NewComixService(
+func NewComicsService(
 	indexRepo port.IndexRepository,
-	comixRepo port.ComixRepository,
+	comixRepo port.ComicsRepository,
 	normalizeSrv port.NormalizeService,
 	cfg *config.Config,
-) *ComixService {
-	return &ComixService{
+) *ComicsService {
+	return &ComicsService{
 		indexRepo:    indexRepo,
-		comixRepo:    comixRepo,
+		comicsRepo:   comixRepo,
 		normalizeSrv: normalizeSrv,
-		batchSize:    cfg.ComixSource.BatchSize,
-		workers:      cfg.ComixSource.Parallel,
-		siteURL:      cfg.ComixSource.URL,
+		batchSize:    cfg.ComicsSource.BatchSize,
+		workers:      cfg.ComicsSource.Parallel,
+		siteURL:      cfg.ComicsSource.URL,
 	}
 }
 
-func (s *ComixService) DownloadAll(ctx context.Context) ([]domain.Comix, error) {
+func (s *ComicsService) DownloadAll(ctx context.Context) ([]domain.Comic, error) {
 	wg, ctx := errgroup.WithContext(ctx)
 
 	neededComicsID := make(chan uint64)
-	batches := make(chan []domain.Comix)
+	batches := make(chan []domain.Comic)
 	// create client
 	client := xkcd.NewClient()
 
 	// Generate ID (jobs)
 	go func() {
-		err := generateID(ctx, neededComicsID, s.comixRepo)
+		err := generateID(ctx, neededComicsID, s.comicsRepo)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -116,7 +124,7 @@ func (s *ComixService) DownloadAll(ctx context.Context) ([]domain.Comix, error) 
 		)
 	}
 
-	comixs := make([]domain.Comix, 0)
+	comics := make([]domain.Comic, 0)
 
 	go func() {
 		errWg := wg.Wait()
@@ -128,23 +136,23 @@ func (s *ComixService) DownloadAll(ctx context.Context) ([]domain.Comix, error) 
 
 	// write to DB our batches
 	for batch := range batches {
-		comixs = append(comixs, batch...)
+		comics = append(comics, batch...)
 
-		err := s.comixRepo.WriteComixs(batch)
+		err := s.comicsRepo.WriteComics(batch)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	_, err := s.indexRepo.UpdateIndex(comixs)
+	_, err := s.indexRepo.UpdateIndex(comics)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return comixs, nil
+	return comics, nil
 }
 
-func downloadComixByID(client *http.Client, ID uint64, siteURL string) (*xkcdDomain.Comix, error) {
+func downloadComicByID(client *http.Client, ID uint64, siteURL string) (*xkcdDomain.Comic, error) {
 	url := fmt.Sprintf("%s/%d/info.0.json", siteURL, ID)
 	resp, err := client.Get(url)
 	if err != nil {
@@ -156,22 +164,22 @@ func downloadComixByID(client *http.Client, ID uint64, siteURL string) (*xkcdDom
 		return nil, fmt.Errorf("cannot get comic from url %s: %w", url, domain.ErrStatusNotOK)
 	}
 
-	var comix xkcdDomain.Comix
-	err = json.NewDecoder(resp.Body).Decode(&comix)
+	var comic xkcdDomain.Comic
+	err = json.NewDecoder(resp.Body).Decode(&comic)
 	if err != nil {
 		return nil, fmt.Errorf("cannot unmarshal comic from url %s: %w", url, err)
 	}
-	return &comix, nil
+	return &comic, nil
 }
 
-func generateID(ctx context.Context, jobs chan<- uint64, storage port.ComixRepository) error {
+func generateID(ctx context.Context, jobs chan<- uint64, storage port.ComicsRepository) error {
 	defer close(jobs)
-	comixAlreadyExist, err := storage.ListComixs()
+	comicAlreadyExist, err := storage.ListComics()
 	if err != nil {
 		return fmt.Errorf("error getting already downloaded IDs: %w", err)
 	}
 	alreadyExistID := make([]uint64, 0)
-	for _, v := range comixAlreadyExist {
+	for _, v := range comicAlreadyExist {
 		alreadyExistID = append(alreadyExistID, v.ID)
 	}
 
@@ -194,13 +202,13 @@ func generateID(ctx context.Context, jobs chan<- uint64, storage port.ComixRepos
 func downloadWorker(
 	ctx context.Context,
 	ID <-chan uint64,
-	batches chan<- []domain.Comix,
+	batches chan<- []domain.Comic,
 	client *http.Client,
 	batchSize int,
 	siteURL string,
 	normalizeSrv port.NormalizeService,
 ) error {
-	batch := make([]domain.Comix, 0, batchSize)
+	batch := make([]domain.Comic, 0, batchSize)
 	defer func() {
 		batches <- batch
 	}()
@@ -210,17 +218,17 @@ func downloadWorker(
 			if !ok {
 				return nil
 			}
-			xkcdComix, err := downloadComixByID(client, currID, siteURL)
+			xkcdComic, err := downloadComicByID(client, currID, siteURL)
 			if err != nil {
 				return fmt.Errorf("error downloading comic: %w", err)
 			}
 
-			comix := xkcdComix.Format(normalizeSrv)
-			batch = append(batch, comix)
+			comic := xkcdComic.Format(normalizeSrv)
+			batch = append(batch, comic)
 
 			if len(batch) == batchSize {
 				batches <- batch
-				batch = make([]domain.Comix, 0, batchSize)
+				batch = make([]domain.Comic, 0, batchSize)
 			}
 		case <-ctx.Done():
 			return nil

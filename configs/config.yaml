@@ -18,7 +18,7 @@ JSONFlat:
   index_path: index.json
   file_path: database.json
 
-ComixSource:
+ComicsSource:
   url: https://xkcd.com
   parallel: 50
   batch_size: 100

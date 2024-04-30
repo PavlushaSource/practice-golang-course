@@ -18,21 +18,14 @@ type Router struct {
 
 func NewRouter(
 	cfg *config.Config,
-	comixHandler *ComixHandler,
+	comicHandler *ComicHandler,
 	ctx context.Context,
 ) (*Router, error) {
 	mux := http.NewServeMux()
 
-	//Get from Index file
-	//mux.HandleFunc("GET /pics", comixHandler.SuggestRelevantURLIndex(ctx))
-
-	// Uncomment for compare simple find relevant URL
-	//mux.HandleFunc("GET /pics", comixHandler.GetRelevantURL)
-
-	//mux.HandleFunc("POST /update", comixHandler.Update(ctx))
-
-	mux.HandleFunc("/hello", comixHandler.SayHello())
-	mux.HandleFunc("GET /pics", comixHandler.GetSuggestRelevantURL())
+	mux.HandleFunc("POST /update", comicHandler.UpdateHandler(ctx))
+	mux.HandleFunc("/hello", comicHandler.SayHello())
+	mux.HandleFunc("GET /pics", comicHandler.GetSuggestRelevantURL())
 
 	//TODO add logger middleware
 
@@ -44,7 +37,7 @@ func NewRouter(
 	return &Router{server: &server}, nil
 }
 
-func (r *Router) Serve(updateInterval time.Duration, ctx context.Context, comixSvc port.ComixService) error {
+func (r *Router) Serve(updateInterval time.Duration, ctx context.Context, comicSvc port.ComicsService) error {
 	ticker := time.NewTicker(updateInterval)
 
 	go func() {
@@ -66,10 +59,10 @@ func (r *Router) Serve(updateInterval time.Duration, ctx context.Context, comixS
 			}
 			return nil
 		case <-ticker.C:
-			slog.Info("update comix DB")
-			_, err := comixSvc.DownloadAll(ctx)
+			slog.Info("update comics DB")
+			_, err := comicSvc.DownloadAll(ctx)
 			if err != nil {
-				return fmt.Errorf("update comix download failed: %w", err)
+				return fmt.Errorf("update comics download failed: %w", err)
 			}
 		}
 	}

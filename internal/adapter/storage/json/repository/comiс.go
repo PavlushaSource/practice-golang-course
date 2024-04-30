@@ -11,13 +11,13 @@ import (
 	"path/filepath"
 )
 
-type ComixJSONStorage struct {
+type ComicJSONStorage struct {
 	filePath string
 }
 
 const perm = 0644
 
-func NewComixRepository(filePath string) *ComixJSONStorage {
+func NewComicRepository(filePath string) *ComicJSONStorage {
 	_, err := os.Stat(filePath)
 	if errors.Is(err, os.ErrNotExist) {
 		_, err = os.Create(filePath)
@@ -25,12 +25,12 @@ func NewComixRepository(filePath string) *ComixJSONStorage {
 			log.Fatal("error creating json file", err)
 		}
 	}
-	return &ComixJSONStorage{filePath: filePath}
+	return &ComicJSONStorage{filePath: filePath}
 }
 
-// WriteComixs Atomic write one or more comix to JSON DB
-func (s *ComixJSONStorage) WriteComixs(comix []domain.Comix) error {
-	alreadyComixs, err := s.ListComixs()
+// WriteComics Atomic write one or more comics to JSON DB
+func (s *ComicJSONStorage) WriteComics(comics []domain.Comic) error {
+	alreadyComics, err := s.ListComics()
 	if err != nil {
 		return fmt.Errorf("error read json file: %w", err)
 	}
@@ -48,9 +48,9 @@ func (s *ComixJSONStorage) WriteComixs(comix []domain.Comix) error {
 		}
 	}()
 
-	comix = append(comix, alreadyComixs...)
+	comics = append(comics, alreadyComics...)
 
-	bytes, err := json.Marshal(comix)
+	bytes, err := json.Marshal(comics)
 	if err != nil {
 		return fmt.Errorf("error marshal json: %w", err)
 	}
@@ -69,25 +69,25 @@ func (s *ComixJSONStorage) WriteComixs(comix []domain.Comix) error {
 	return os.Rename(tmpName, s.filePath)
 }
 
-// GetComixByID Read comix by ID from JSON DB
-func (s *ComixJSONStorage) GetComixByID(ID uint64) (*domain.Comix, error) {
-	comixs, err := s.ListComixs()
+// GetComicByID Read comic by ID from JSON DB
+func (s *ComicJSONStorage) GetComicByID(ID uint64) (*domain.Comic, error) {
+	comics, err := s.ListComics()
 	if err != nil {
 		return nil, fmt.Errorf("error read json file: %w", err)
 	}
 
-	for _, comix := range comixs {
-		if comix.ID == ID {
-			return &comix, nil
+	for _, comic := range comics {
+		if comic.ID == ID {
+			return &comic, nil
 		}
 	}
 
 	return nil, nil
 }
 
-// ListComixs Read all comixs from JSON DB
-func (s *ComixJSONStorage) ListComixs() ([]domain.Comix, error) {
-	var comixs []domain.Comix
+// ListComics Read all comics from JSON DB
+func (s *ComicJSONStorage) ListComics() ([]domain.Comic, error) {
+	var comics []domain.Comic
 	file, err := os.Open(s.filePath)
 	defer func(file *os.File) {
 		err = file.Close()
@@ -97,13 +97,13 @@ func (s *ComixJSONStorage) ListComixs() ([]domain.Comix, error) {
 	}(file)
 
 	if err != nil {
-		return nil, fmt.Errorf("error list comixs: %w", err)
+		return nil, fmt.Errorf("error list comics: %w", err)
 	}
 	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&comixs)
+	err = decoder.Decode(&comics)
 
 	if err != nil && !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("error decode json file: %w", err)
 	}
-	return comixs, nil
+	return comics, nil
 }

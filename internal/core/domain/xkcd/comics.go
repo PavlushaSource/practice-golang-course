@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type Comix struct {
+type Comic struct {
 	Month      string `json:"month"`
 	Num        int    `json:"num"`
 	Link       string `json:"link"`
@@ -20,8 +20,8 @@ type Comix struct {
 	Day        string `json:"day"`
 }
 
-func (c *Comix) Format(normalizeSvc port.NormalizeService) domain.Comix {
-	var comix domain.Comix
+func (c *Comic) Format(normalizeSvc port.NormalizeService) domain.Comic {
+	var comic domain.Comic
 
 	safeTitle, err := normalizeSvc.Normalize(c.SafeTitle)
 	if err != nil {
@@ -38,12 +38,12 @@ func (c *Comix) Format(normalizeSvc port.NormalizeService) domain.Comix {
 		alt = strings.Split(c.Alt, " ")
 	}
 
-	comix.Keywords = append(comix.Keywords, safeTitle...)
-	comix.Keywords = append(comix.Keywords, transcript...)
-	comix.Keywords = append(comix.Keywords, alt...)
+	comic.Keywords = append(comic.Keywords, safeTitle...)
+	comic.Keywords = append(comic.Keywords, transcript...)
+	comic.Keywords = append(comic.Keywords, alt...)
 
-	comix.ID = uint64(c.Num)
-	comix.URL = c.Img
+	comic.ID = uint64(c.Num)
+	comic.URL = c.Img
 
-	return comix
+	return comic
 }

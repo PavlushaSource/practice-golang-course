@@ -26,8 +26,8 @@ func NewIndexRepository(filePath string) *IndexJSONStorage {
 	return &IndexJSONStorage{filePath: filePath}
 }
 
-func (r *IndexJSONStorage) Get() (domain.ComixIndex, error) {
-	index := domain.ComixIndex{Index: make(map[string][]uint64)}
+func (r *IndexJSONStorage) Get() (domain.ComicIndex, error) {
+	index := domain.ComicIndex{Index: make(map[string][]uint64)}
 	file, err := os.Open(r.filePath)
 	defer func(file *os.File) {
 		err = file.Close()
@@ -50,15 +50,15 @@ func (r *IndexJSONStorage) Get() (domain.ComixIndex, error) {
 	return index, nil
 }
 
-func (r *IndexJSONStorage) UpdateIndex(inputComixs []domain.Comix) (domain.ComixIndex, error) {
+func (r *IndexJSONStorage) UpdateIndex(inputComics []domain.Comic) (domain.ComicIndex, error) {
 	index, err := r.Get()
 	if err != nil {
 		return index, fmt.Errorf("error get index: %w", err)
 	}
 
-	for _, comix := range inputComixs {
-		for _, keywords := range comix.Keywords {
-			index.Index[keywords] = append(index.Index[keywords], comix.ID)
+	for _, comic := range inputComics {
+		for _, keywords := range comic.Keywords {
+			index.Index[keywords] = append(index.Index[keywords], comic.ID)
 		}
 	}
 

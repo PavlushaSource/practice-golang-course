@@ -1,5 +1,5 @@
 package domain
 
-type ComixIndex struct {
+type ComicIndex struct {
 	Index map[string][]uint64 `json:"indexes"`
 }

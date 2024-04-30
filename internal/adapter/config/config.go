@@ -34,15 +34,15 @@ type Config struct {
 	} `yaml:"DB"`
 
 	JSONFlat struct {
-		DBFilepath    string `yaml:"file_path" env-description:"Path to comixs DB json file" envDefault:"database.json"`
-		IndexFilepath string `yaml:"index_path" env-description:"Path to index comixs json file" envDefault:"index.json"`
+		DBFilepath    string `yaml:"file_path" env-description:"Path to comics DB json file" envDefault:"database.json"`
+		IndexFilepath string `yaml:"index_path" env-description:"Path to index comics json file" envDefault:"index.json"`
 	} `yaml:"JSONFlat"`
 
-	ComixSource struct {
-		URL       string `yaml:"url" env-description:"Comix source url" envDefault:"https://xkcd.com"`
+	ComicsSource struct {
+		URL       string `yaml:"url" env-description:"Comic source url" envDefault:"https://xkcd.com"`
 		Parallel  int    `yaml:"parallel" envRequired:"true"`
 		BatchSize int    `yaml:"batch_size" envRequired:"true"`
-	} `yaml:"ComixSource"`
+	} `yaml:"ComicsSource"`
 
 	Spellchecker struct {
 		ModelPath    string `yaml:"model_path" envDefault:"pkg/assets/resources/spellchecker/savedModel"`

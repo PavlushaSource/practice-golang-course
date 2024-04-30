@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -21,11 +20,9 @@ func newSuggestRelevantURLRequest(r *http.Request) SuggestRelevantURLRequest {
 	}
 
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil {
-		fmt.Printf("cannot convert")
+	if err != nil || limit <= 0 {
 		limit = 10
 	}
-	fmt.Printf("length: %d\n", limit)
 	return SuggestRelevantURLRequest{
 		search: search,
 		limit:  limit,
